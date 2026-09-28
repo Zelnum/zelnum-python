@@ -20,9 +20,6 @@ Requires Python 3.9+.
 python -m pip install zelnum
 ```
 
-Before the first PyPI release, install from this repository with
-`python -m pip install .` instead.
-
 1. Create an account or sign in at [zelnum.com](https://zelnum.com).
 2. Open **API Center**, create an API key, and copy it when shown. Keep the secret
    outside source code and logs. See [authentication](https://docs.zelnum.com/authentication/).
