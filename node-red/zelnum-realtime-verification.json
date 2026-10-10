@@ -1,0 +1,271 @@
+[
+  {
+    "id": "zelnum-realtime-tab",
+    "type": "tab",
+    "label": "Zelnum Realtime Verification",
+    "disabled": false,
+    "info": "# Zelnum Node-RED flows\n\nUse [Zelnum](https://zelnum.com) phone and email verification in Node-RED:\ncheck a single contact with realtime mode, or submit a list with bulk mode\nand download its results. Both examples use built-in Node-RED nodes.\n\n## Create an account and API key\n\n1. Register or sign in at [app.zelnum.com](https://app.zelnum.com).\n2. Open **API Center** and create an API key. Keep it private.\n3. Read the [API documentation](https://docs.zelnum.com) for product coverage,\n   billing, rate limits and error codes.\n\n## Import and configure\n\n1. Copy a flow JSON and choose **Menu → Import → Clipboard** in Node-RED.\n2. Double-click the imported flow tab to open **Flow Properties**, then use\n   its **Environment Variables** tab (Node-RED 2.1+). Add the values below,\n   click **Done**, and **Deploy**. Use String type for identifiers and keys.\n   These variables are also accessible through `env.get()` in Function nodes.\n   Global variables, when needed, are in **User Settings → Environment**\n   (Node-RED 3.1+), not Manage palette.\n3. Set your secret API key only in your own Node-RED runtime. Flow variables\n   can be included in exports, so remove secret values before sharing a flow.\n\n### Realtime: one phone number or email address\n\nImport `zelnum-realtime-verification.json`. Configure:\n\n| Variable | Value |\n| --- | --- |\n| `ZELNUM_API_KEY` | Your private API key |\n| `ZELNUM_REALTIME_PRODUCT_ID` | Current realtime product ID from `GET https://api.zelnum.com/api/v1/products` |\n| `ZELNUM_SERIES` | `phone` or `email`, matching the selected product |\n| `ZELNUM_IDENTIFIER` | The contact you want to verify |\n| `ZELNUM_COUNTRY` | ISO country code for phone, e.g. `US`; omitted for email |\n| `ZELNUM_IDEMPOTENCY_KEY` | A unique key for this logical realtime request |\n\nClick **1. Get quote (no charge)** and inspect its price in the Debug sidebar.\nThen click **2. Execute check (BILLABLE)** only when you want to perform the\ncheck. The response appears in **Realtime result**.\n\n### Bulk: submit, inspect and download\n\nImport `zelnum-bulk-verification.json`. Configure:\n\n| Variable | Value |\n| --- | --- |\n| `ZELNUM_API_KEY` | Your private API key |\n| `ZELNUM_BULK_PRODUCT` | Current async product slug, from **Get products** |\n| `ZELNUM_BULK_SERIES` | `phone` or `email`, matching that product |\n| `ZELNUM_IDENTIFIERS` | Your own comma-separated or newline-separated list |\n| `ZELNUM_COUNTRY` | ISO country code for phone; omitted for email |\n| `ZELNUM_IDEMPOTENCY_KEY` | A unique key for this logical bulk submission |\n| `ZELNUM_TASK_ID` | Optional existing task ID for status/download after a restart; leave blank for a newly submitted task |\n\n1. Click **1. Get products / minimum rows**. Review `slug`, `series` and\n   `min_phones` in **Product minimums**. Select a current async product.\n2. Supply a real list meeting that product's minimum. Two example numbers\n   are not a valid production batch. Do not pad a batch with dummy or repeated\n   values. This array-quote example accepts at most **10,000 rows**;\n   use split batches or consult the file submission API for larger inputs.\n3. Deploy your variables and click **2. Quote list (no charge)**. Product\n   metadata is refreshed manually and accepted for five minutes; click Get\n   products again if prompted. Review the quoted cost.\n4. Click **3. Submit task (BILLABLE)**. The flow remembers the returned task\n   ID. If `ZELNUM_TASK_ID` is set, status/download use that value instead.\n5. Click **4. Get task status**. Repeat manually at 3–5 second intervals\n   while pending/processing. Failed tasks are reported separately.\n6. Click **5. Get result and download** when results are available. This\n   fetches result metadata, then the authenticated ZIP/CSV download. The\n   result reaches **Downloaded result Buffer** as `msg.payload`; the suggested\n   name is `msg.filename`, with byte count in `msg.zelnumDownload`.\n\nThe example downloads into memory and does not write local files. You can\nconnect a File node **after Reject failed / empty download** to save a valid\nbuffer, using a path appropriate to your deployment. Failed or empty downloads\nnever reach that output. For large files, prefer a streaming download client.\nResult URLs require the API key; opening the URL alone in a browser is not enough.\n\n## Quotes, retries and errors\n\n- Quotes expire at their returned `expires_at`. Get a new quote if expired.\n- Changing the identifier/list, product, series or country requires a new\n  quote. Execution is blocked if those inputs differ from the reviewed quote.\n- Keep the same idempotency key when retrying the same logical request. Use\n  a new key for each new request, and separate keys for realtime and bulk.\n- A completed task with no available result is completed but unavailable or\n  expired, not still processing. `404` on result/download is distinct from\n  `422 result_not_ready`. Download before the returned expiry time.\n- The example checks HTTP responses and routes failures to **Zelnum error**.\n  See [error codes](https://docs.zelnum.com/errors/) and\n  [bulk result documentation](https://docs.zelnum.com/async-detection/result/).\n\nNo API key or contact list is shipped in these examples. Only the separately\nlabelled BILLABLE inject nodes perform chargeable checks/submissions.\n\nWebsite: [zelnum.com](https://zelnum.com) ·\nSign up: [app.zelnum.com](https://app.zelnum.com) ·\nAPI docs: [docs.zelnum.com](https://docs.zelnum.com) ·\nPython SDK: [Zelnum/zelnum-python](https://github.com/Zelnum/zelnum-python)\n"
+  },
+  {
+    "id": "rt-readme",
+    "type": "comment",
+    "z": "zelnum-realtime-tab",
+    "name": "Zelnum Realtime Verification — quote before execute",
+    "info": "# Zelnum Node-RED flows\n\nUse [Zelnum](https://zelnum.com) phone and email verification in Node-RED:\ncheck a single contact with realtime mode, or submit a list with bulk mode\nand download its results. Both examples use built-in Node-RED nodes.\n\n## Create an account and API key\n\n1. Register or sign in at [app.zelnum.com](https://app.zelnum.com).\n2. Open **API Center** and create an API key. Keep it private.\n3. Read the [API documentation](https://docs.zelnum.com) for product coverage,\n   billing, rate limits and error codes.\n\n## Import and configure\n\n1. Copy a flow JSON and choose **Menu → Import → Clipboard** in Node-RED.\n2. Double-click the imported flow tab to open **Flow Properties**, then use\n   its **Environment Variables** tab (Node-RED 2.1+). Add the values below,\n   click **Done**, and **Deploy**. Use String type for identifiers and keys.\n   These variables are also accessible through `env.get()` in Function nodes.\n   Global variables, when needed, are in **User Settings → Environment**\n   (Node-RED 3.1+), not Manage palette.\n3. Set your secret API key only in your own Node-RED runtime. Flow variables\n   can be included in exports, so remove secret values before sharing a flow.\n\n### Realtime: one phone number or email address\n\nImport `zelnum-realtime-verification.json`. Configure:\n\n| Variable | Value |\n| --- | --- |\n| `ZELNUM_API_KEY` | Your private API key |\n| `ZELNUM_REALTIME_PRODUCT_ID` | Current realtime product ID from `GET https://api.zelnum.com/api/v1/products` |\n| `ZELNUM_SERIES` | `phone` or `email`, matching the selected product |\n| `ZELNUM_IDENTIFIER` | The contact you want to verify |\n| `ZELNUM_COUNTRY` | ISO country code for phone, e.g. `US`; omitted for email |\n| `ZELNUM_IDEMPOTENCY_KEY` | A unique key for this logical realtime request |\n\nClick **1. Get quote (no charge)** and inspect its price in the Debug sidebar.\nThen click **2. Execute check (BILLABLE)** only when you want to perform the\ncheck. The response appears in **Realtime result**.\n\n### Bulk: submit, inspect and download\n\nImport `zelnum-bulk-verification.json`. Configure:\n\n| Variable | Value |\n| --- | --- |\n| `ZELNUM_API_KEY` | Your private API key |\n| `ZELNUM_BULK_PRODUCT` | Current async product slug, from **Get products** |\n| `ZELNUM_BULK_SERIES` | `phone` or `email`, matching that product |\n| `ZELNUM_IDENTIFIERS` | Your own comma-separated or newline-separated list |\n| `ZELNUM_COUNTRY` | ISO country code for phone; omitted for email |\n| `ZELNUM_IDEMPOTENCY_KEY` | A unique key for this logical bulk submission |\n| `ZELNUM_TASK_ID` | Optional existing task ID for status/download after a restart; leave blank for a newly submitted task |\n\n1. Click **1. Get products / minimum rows**. Review `slug`, `series` and\n   `min_phones` in **Product minimums**. Select a current async product.\n2. Supply a real list meeting that product's minimum. Two example numbers\n   are not a valid production batch. Do not pad a batch with dummy or repeated\n   values. This array-quote example accepts at most **10,000 rows**;\n   use split batches or consult the file submission API for larger inputs.\n3. Deploy your variables and click **2. Quote list (no charge)**. Product\n   metadata is refreshed manually and accepted for five minutes; click Get\n   products again if prompted. Review the quoted cost.\n4. Click **3. Submit task (BILLABLE)**. The flow remembers the returned task\n   ID. If `ZELNUM_TASK_ID` is set, status/download use that value instead.\n5. Click **4. Get task status**. Repeat manually at 3–5 second intervals\n   while pending/processing. Failed tasks are reported separately.\n6. Click **5. Get result and download** when results are available. This\n   fetches result metadata, then the authenticated ZIP/CSV download. The\n   result reaches **Downloaded result Buffer** as `msg.payload`; the suggested\n   name is `msg.filename`, with byte count in `msg.zelnumDownload`.\n\nThe example downloads into memory and does not write local files. You can\nconnect a File node **after Reject failed / empty download** to save a valid\nbuffer, using a path appropriate to your deployment. Failed or empty downloads\nnever reach that output. For large files, prefer a streaming download client.\nResult URLs require the API key; opening the URL alone in a browser is not enough.\n\n## Quotes, retries and errors\n\n- Quotes expire at their returned `expires_at`. Get a new quote if expired.\n- Changing the identifier/list, product, series or country requires a new\n  quote. Execution is blocked if those inputs differ from the reviewed quote.\n- Keep the same idempotency key when retrying the same logical request. Use\n  a new key for each new request, and separate keys for realtime and bulk.\n- A completed task with no available result is completed but unavailable or\n  expired, not still processing. `404` on result/download is distinct from\n  `422 result_not_ready`. Download before the returned expiry time.\n- The example checks HTTP responses and routes failures to **Zelnum error**.\n  See [error codes](https://docs.zelnum.com/errors/) and\n  [bulk result documentation](https://docs.zelnum.com/async-detection/result/).\n\nNo API key or contact list is shipped in these examples. Only the separately\nlabelled BILLABLE inject nodes perform chargeable checks/submissions.\n\nWebsite: [zelnum.com](https://zelnum.com) ·\nSign up: [app.zelnum.com](https://app.zelnum.com) ·\nAPI docs: [docs.zelnum.com](https://docs.zelnum.com) ·\nPython SDK: [Zelnum/zelnum-python](https://github.com/Zelnum/zelnum-python)\n",
+    "x": 250,
+    "y": 60,
+    "wires": []
+  },
+  {
+    "id": "rt-inject-quote",
+    "type": "inject",
+    "z": "zelnum-realtime-tab",
+    "name": "1. Get quote (no charge)",
+    "props": [],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "x": 160,
+    "y": 120,
+    "wires": [
+      [
+        "rt-build-quote"
+      ]
+    ]
+  },
+  {
+    "id": "rt-build-quote",
+    "type": "function",
+    "z": "zelnum-realtime-tab",
+    "name": "Build quote request",
+    "func": "flow.set('zelnumRealtimeQuote',undefined);\n const apiKey=env.get('ZELNUM_API_KEY');\n const series=String(env.get('ZELNUM_SERIES')||'phone').trim().toLowerCase();\n const identifier=String(env.get('ZELNUM_IDENTIFIER')||'').trim();\n const productId=Number(env.get('ZELNUM_REALTIME_PRODUCT_ID'));\n if(!apiKey||!identifier||!Number.isInteger(productId)||productId<=0||!['phone','email'].includes(series)){node.error('Set API key, identifier, current realtime product ID and phone/email series. Register at https://app.zelnum.com',msg);return null;}\n const body={identifier,product_ids:[productId]};\n if(series==='phone')body.country=String(env.get('ZELNUM_COUNTRY')||'US').trim().toUpperCase();\n msg.method='POST';msg.url=`https://api.zelnum.com/api/v1/realtime/quote/${series}`;\n msg.headers={'X-API-Key':apiKey,'Content-Type':'application/json'};\n msg.payload=body;msg.zelnum={series,body:JSON.parse(JSON.stringify(body))};\n return msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 380,
+    "y": 120,
+    "wires": [
+      [
+        "rt-http-quote"
+      ]
+    ]
+  },
+  {
+    "id": "rt-http-quote",
+    "type": "http request",
+    "z": "zelnum-realtime-tab",
+    "name": "POST realtime quote",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 610,
+    "y": 120,
+    "wires": [
+      [
+        "rt-save-quote"
+      ]
+    ]
+  },
+  {
+    "id": "rt-save-quote",
+    "type": "function",
+    "z": "zelnum-realtime-tab",
+    "name": "Save quote for optional execute",
+    "func": "delete msg.headers;\nif (Number(msg.statusCode) < 200 || Number(msg.statusCode) >= 300 || !msg.payload || !msg.payload.quote || !msg.zelnum) {\n  flow.set('zelnumRealtimeQuote', undefined); node.error('Quote failed: ' + ((msg.payload && (msg.payload.message || msg.payload.code)) || msg.statusCode), msg); return null;\n}\nconst quote = msg.payload.quote;\nif (!quote.quote_token || !Number.isFinite(Number(quote.total)) || !Number.isFinite(Date.parse(quote.expires_at)) || Date.parse(quote.expires_at) <= Date.now()) {\n  flow.set('zelnumRealtimeQuote', undefined); node.error('Invalid or expired quote; request a new one.', msg); return null;\n}\nflow.set('zelnumRealtimeQuote', {quote, request: msg.zelnum});\nmsg.payload = {quote, count: 1, next: 'Review the price before clicking the separate BILLABLE inject. Keep the idempotency key for retries; use a new key for each new request.'};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 850,
+    "y": 120,
+    "wires": [
+      [
+        "rt-debug-quote"
+      ]
+    ]
+  },
+  {
+    "id": "rt-debug-quote",
+    "type": "debug",
+    "z": "zelnum-realtime-tab",
+    "name": "Realtime quote",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1080,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "rt-inject-execute",
+    "type": "inject",
+    "z": "zelnum-realtime-tab",
+    "name": "2. Execute check (BILLABLE)",
+    "props": [],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "x": 180,
+    "y": 220,
+    "wires": [
+      [
+        "rt-build-check"
+      ]
+    ]
+  },
+  {
+    "id": "rt-build-check",
+    "type": "function",
+    "z": "zelnum-realtime-tab",
+    "name": "Build quoted check",
+    "func": "const saved = flow.get('zelnumRealtimeQuote');\nconst apiKey = env.get('ZELNUM_API_KEY');\nconst idempotencyKey = String(env.get('ZELNUM_IDEMPOTENCY_KEY') || '').trim();\nif (!apiKey || !idempotencyKey) { node.error('Set API key and a unique idempotency key for this logical request.', msg); return null; }\nif (!saved || !saved.request || !saved.quote || Date.parse(saved.quote.expires_at) <= Date.now()) { node.error('Get a fresh quote first; quotes expire.', msg); return null; }\nconst series = String(env.get('ZELNUM_SERIES') || 'phone').trim().toLowerCase();\nconst current = {identifier: String(env.get('ZELNUM_IDENTIFIER') || '').trim(), product_ids: [Number(env.get('ZELNUM_REALTIME_PRODUCT_ID'))]};\nif (series === 'phone') current.country = String(env.get('ZELNUM_COUNTRY') || 'US').trim().toUpperCase();\nif (series !== saved.request.series || JSON.stringify(current) !== JSON.stringify(saved.request.body)) { node.error('Inputs changed after quoting (including country). Get a new quote and review its price.', msg); return null; }\nif (saved.idempotencyKey && saved.idempotencyKey !== idempotencyKey) { node.error('This quote has already been executed. Keep its key for retries or get a new quote for a new request.', msg); return null; }\nsaved.idempotencyKey = idempotencyKey; flow.set('zelnumRealtimeQuote', saved);\nmsg.method = 'POST'; msg.url = `https://api.zelnum.com/api/v1/realtime/check/${series}`;\nmsg.headers = {'X-API-Key': apiKey, 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey, 'X-ZelNum-Quote': saved.quote.quote_token, 'X-ZelNum-Quote-Amount': String(saved.quote.total)};\nmsg.payload = JSON.parse(JSON.stringify(saved.request.body));\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 220,
+    "wires": [
+      [
+        "rt-http-check"
+      ]
+    ]
+  },
+  {
+    "id": "rt-http-check",
+    "type": "http request",
+    "z": "zelnum-realtime-tab",
+    "name": "POST realtime check",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 660,
+    "y": 220,
+    "wires": [
+      [
+        "rt-check-response"
+      ]
+    ]
+  },
+  {
+    "id": "rt-debug-result",
+    "type": "debug",
+    "z": "zelnum-realtime-tab",
+    "name": "Realtime result",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1110,
+    "y": 220,
+    "wires": []
+  },
+  {
+    "id": "rt-catch",
+    "type": "catch",
+    "z": "zelnum-realtime-tab",
+    "name": "Catch Zelnum errors",
+    "scope": null,
+    "uncaught": false,
+    "x": 160,
+    "y": 320,
+    "wires": [
+      [
+        "rt-format-error"
+      ]
+    ]
+  },
+  {
+    "id": "rt-format-error",
+    "type": "function",
+    "z": "zelnum-realtime-tab",
+    "name": "Format error",
+    "func": "msg.payload = { error: (msg.error && msg.error.message) || 'Node-RED request failed', statusCode: msg.statusCode || null, docs: 'https://docs.zelnum.com/errors/' };\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 380,
+    "y": 320,
+    "wires": [
+      [
+        "rt-debug-error"
+      ]
+    ]
+  },
+  {
+    "id": "rt-debug-error",
+    "type": "debug",
+    "z": "zelnum-realtime-tab",
+    "name": "Zelnum error",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 620,
+    "y": 320,
+    "wires": []
+  },
+  {
+    "id": "rt-check-response",
+    "type": "function",
+    "z": "zelnum-realtime-tab",
+    "name": "Check realtime response",
+    "func": "delete msg.headers;\nif(Number(msg.statusCode)<200 || Number(msg.statusCode)>=300){node.error('Realtime execution failed: '+((msg.payload && (msg.payload.message || msg.payload.code)) || msg.statusCode),msg);return null;}return msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 880,
+    "y": 220,
+    "wires": [
+      [
+        "rt-debug-result"
+      ]
+    ]
+  }
+]

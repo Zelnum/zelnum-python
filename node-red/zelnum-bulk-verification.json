@@ -1,0 +1,615 @@
+[
+  {
+    "id": "zelnum-bulk-tab",
+    "type": "tab",
+    "label": "Zelnum Bulk Verification",
+    "disabled": false,
+    "info": "# Zelnum Node-RED flows\n\nUse [Zelnum](https://zelnum.com) phone and email verification in Node-RED:\ncheck a single contact with realtime mode, or submit a list with bulk mode\nand download its results. Both examples use built-in Node-RED nodes.\n\n## Create an account and API key\n\n1. Register or sign in at [app.zelnum.com](https://app.zelnum.com).\n2. Open **API Center** and create an API key. Keep it private.\n3. Read the [API documentation](https://docs.zelnum.com) for product coverage,\n   billing, rate limits and error codes.\n\n## Import and configure\n\n1. Copy a flow JSON and choose **Menu → Import → Clipboard** in Node-RED.\n2. Double-click the imported flow tab to open **Flow Properties**, then use\n   its **Environment Variables** tab (Node-RED 2.1+). Add the values below,\n   click **Done**, and **Deploy**. Use String type for identifiers and keys.\n   These variables are also accessible through `env.get()` in Function nodes.\n   Global variables, when needed, are in **User Settings → Environment**\n   (Node-RED 3.1+), not Manage palette.\n3. Set your secret API key only in your own Node-RED runtime. Flow variables\n   can be included in exports, so remove secret values before sharing a flow.\n\n### Realtime: one phone number or email address\n\nImport `zelnum-realtime-verification.json`. Configure:\n\n| Variable | Value |\n| --- | --- |\n| `ZELNUM_API_KEY` | Your private API key |\n| `ZELNUM_REALTIME_PRODUCT_ID` | Current realtime product ID from `GET https://api.zelnum.com/api/v1/products` |\n| `ZELNUM_SERIES` | `phone` or `email`, matching the selected product |\n| `ZELNUM_IDENTIFIER` | The contact you want to verify |\n| `ZELNUM_COUNTRY` | ISO country code for phone, e.g. `US`; omitted for email |\n| `ZELNUM_IDEMPOTENCY_KEY` | A unique key for this logical realtime request |\n\nClick **1. Get quote (no charge)** and inspect its price in the Debug sidebar.\nThen click **2. Execute check (BILLABLE)** only when you want to perform the\ncheck. The response appears in **Realtime result**.\n\n### Bulk: submit, inspect and download\n\nImport `zelnum-bulk-verification.json`. Configure:\n\n| Variable | Value |\n| --- | --- |\n| `ZELNUM_API_KEY` | Your private API key |\n| `ZELNUM_BULK_PRODUCT` | Current async product slug, from **Get products** |\n| `ZELNUM_BULK_SERIES` | `phone` or `email`, matching that product |\n| `ZELNUM_IDENTIFIERS` | Your own comma-separated or newline-separated list |\n| `ZELNUM_COUNTRY` | ISO country code for phone; omitted for email |\n| `ZELNUM_IDEMPOTENCY_KEY` | A unique key for this logical bulk submission |\n| `ZELNUM_TASK_ID` | Optional existing task ID for status/download after a restart; leave blank for a newly submitted task |\n\n1. Click **1. Get products / minimum rows**. Review `slug`, `series` and\n   `min_phones` in **Product minimums**. Select a current async product.\n2. Supply a real list meeting that product's minimum. Two example numbers\n   are not a valid production batch. Do not pad a batch with dummy or repeated\n   values. This array-quote example accepts at most **10,000 rows**;\n   use split batches or consult the file submission API for larger inputs.\n3. Deploy your variables and click **2. Quote list (no charge)**. Product\n   metadata is refreshed manually and accepted for five minutes; click Get\n   products again if prompted. Review the quoted cost.\n4. Click **3. Submit task (BILLABLE)**. The flow remembers the returned task\n   ID. If `ZELNUM_TASK_ID` is set, status/download use that value instead.\n5. Click **4. Get task status**. Repeat manually at 3–5 second intervals\n   while pending/processing. Failed tasks are reported separately.\n6. Click **5. Get result and download** when results are available. This\n   fetches result metadata, then the authenticated ZIP/CSV download. The\n   result reaches **Downloaded result Buffer** as `msg.payload`; the suggested\n   name is `msg.filename`, with byte count in `msg.zelnumDownload`.\n\nThe example downloads into memory and does not write local files. You can\nconnect a File node **after Reject failed / empty download** to save a valid\nbuffer, using a path appropriate to your deployment. Failed or empty downloads\nnever reach that output. For large files, prefer a streaming download client.\nResult URLs require the API key; opening the URL alone in a browser is not enough.\n\n## Quotes, retries and errors\n\n- Quotes expire at their returned `expires_at`. Get a new quote if expired.\n- Changing the identifier/list, product, series or country requires a new\n  quote. Execution is blocked if those inputs differ from the reviewed quote.\n- Keep the same idempotency key when retrying the same logical request. Use\n  a new key for each new request, and separate keys for realtime and bulk.\n- A completed task with no available result is completed but unavailable or\n  expired, not still processing. `404` on result/download is distinct from\n  `422 result_not_ready`. Download before the returned expiry time.\n- The example checks HTTP responses and routes failures to **Zelnum error**.\n  See [error codes](https://docs.zelnum.com/errors/) and\n  [bulk result documentation](https://docs.zelnum.com/async-detection/result/).\n\nNo API key or contact list is shipped in these examples. Only the separately\nlabelled BILLABLE inject nodes perform chargeable checks/submissions.\n\nWebsite: [zelnum.com](https://zelnum.com) ·\nSign up: [app.zelnum.com](https://app.zelnum.com) ·\nAPI docs: [docs.zelnum.com](https://docs.zelnum.com) ·\nPython SDK: [Zelnum/zelnum-python](https://github.com/Zelnum/zelnum-python)\n"
+  },
+  {
+    "id": "bulk-readme",
+    "type": "comment",
+    "z": "zelnum-bulk-tab",
+    "name": "Zelnum Bulk Verification — quote before submit",
+    "info": "# Zelnum Node-RED flows\n\nUse [Zelnum](https://zelnum.com) phone and email verification in Node-RED:\ncheck a single contact with realtime mode, or submit a list with bulk mode\nand download its results. Both examples use built-in Node-RED nodes.\n\n## Create an account and API key\n\n1. Register or sign in at [app.zelnum.com](https://app.zelnum.com).\n2. Open **API Center** and create an API key. Keep it private.\n3. Read the [API documentation](https://docs.zelnum.com) for product coverage,\n   billing, rate limits and error codes.\n\n## Import and configure\n\n1. Copy a flow JSON and choose **Menu → Import → Clipboard** in Node-RED.\n2. Double-click the imported flow tab to open **Flow Properties**, then use\n   its **Environment Variables** tab (Node-RED 2.1+). Add the values below,\n   click **Done**, and **Deploy**. Use String type for identifiers and keys.\n   These variables are also accessible through `env.get()` in Function nodes.\n   Global variables, when needed, are in **User Settings → Environment**\n   (Node-RED 3.1+), not Manage palette.\n3. Set your secret API key only in your own Node-RED runtime. Flow variables\n   can be included in exports, so remove secret values before sharing a flow.\n\n### Realtime: one phone number or email address\n\nImport `zelnum-realtime-verification.json`. Configure:\n\n| Variable | Value |\n| --- | --- |\n| `ZELNUM_API_KEY` | Your private API key |\n| `ZELNUM_REALTIME_PRODUCT_ID` | Current realtime product ID from `GET https://api.zelnum.com/api/v1/products` |\n| `ZELNUM_SERIES` | `phone` or `email`, matching the selected product |\n| `ZELNUM_IDENTIFIER` | The contact you want to verify |\n| `ZELNUM_COUNTRY` | ISO country code for phone, e.g. `US`; omitted for email |\n| `ZELNUM_IDEMPOTENCY_KEY` | A unique key for this logical realtime request |\n\nClick **1. Get quote (no charge)** and inspect its price in the Debug sidebar.\nThen click **2. Execute check (BILLABLE)** only when you want to perform the\ncheck. The response appears in **Realtime result**.\n\n### Bulk: submit, inspect and download\n\nImport `zelnum-bulk-verification.json`. Configure:\n\n| Variable | Value |\n| --- | --- |\n| `ZELNUM_API_KEY` | Your private API key |\n| `ZELNUM_BULK_PRODUCT` | Current async product slug, from **Get products** |\n| `ZELNUM_BULK_SERIES` | `phone` or `email`, matching that product |\n| `ZELNUM_IDENTIFIERS` | Your own comma-separated or newline-separated list |\n| `ZELNUM_COUNTRY` | ISO country code for phone; omitted for email |\n| `ZELNUM_IDEMPOTENCY_KEY` | A unique key for this logical bulk submission |\n| `ZELNUM_TASK_ID` | Optional existing task ID for status/download after a restart; leave blank for a newly submitted task |\n\n1. Click **1. Get products / minimum rows**. Review `slug`, `series` and\n   `min_phones` in **Product minimums**. Select a current async product.\n2. Supply a real list meeting that product's minimum. Two example numbers\n   are not a valid production batch. Do not pad a batch with dummy or repeated\n   values. This array-quote example accepts at most **10,000 rows**;\n   use split batches or consult the file submission API for larger inputs.\n3. Deploy your variables and click **2. Quote list (no charge)**. Product\n   metadata is refreshed manually and accepted for five minutes; click Get\n   products again if prompted. Review the quoted cost.\n4. Click **3. Submit task (BILLABLE)**. The flow remembers the returned task\n   ID. If `ZELNUM_TASK_ID` is set, status/download use that value instead.\n5. Click **4. Get task status**. Repeat manually at 3–5 second intervals\n   while pending/processing. Failed tasks are reported separately.\n6. Click **5. Get result and download** when results are available. This\n   fetches result metadata, then the authenticated ZIP/CSV download. The\n   result reaches **Downloaded result Buffer** as `msg.payload`; the suggested\n   name is `msg.filename`, with byte count in `msg.zelnumDownload`.\n\nThe example downloads into memory and does not write local files. You can\nconnect a File node **after Reject failed / empty download** to save a valid\nbuffer, using a path appropriate to your deployment. Failed or empty downloads\nnever reach that output. For large files, prefer a streaming download client.\nResult URLs require the API key; opening the URL alone in a browser is not enough.\n\n## Quotes, retries and errors\n\n- Quotes expire at their returned `expires_at`. Get a new quote if expired.\n- Changing the identifier/list, product, series or country requires a new\n  quote. Execution is blocked if those inputs differ from the reviewed quote.\n- Keep the same idempotency key when retrying the same logical request. Use\n  a new key for each new request, and separate keys for realtime and bulk.\n- A completed task with no available result is completed but unavailable or\n  expired, not still processing. `404` on result/download is distinct from\n  `422 result_not_ready`. Download before the returned expiry time.\n- The example checks HTTP responses and routes failures to **Zelnum error**.\n  See [error codes](https://docs.zelnum.com/errors/) and\n  [bulk result documentation](https://docs.zelnum.com/async-detection/result/).\n\nNo API key or contact list is shipped in these examples. Only the separately\nlabelled BILLABLE inject nodes perform chargeable checks/submissions.\n\nWebsite: [zelnum.com](https://zelnum.com) ·\nSign up: [app.zelnum.com](https://app.zelnum.com) ·\nAPI docs: [docs.zelnum.com](https://docs.zelnum.com) ·\nPython SDK: [Zelnum/zelnum-python](https://github.com/Zelnum/zelnum-python)\n",
+    "x": 260,
+    "y": 60,
+    "wires": []
+  },
+  {
+    "id": "bulk-inject-quote",
+    "type": "inject",
+    "z": "zelnum-bulk-tab",
+    "name": "2. Quote list (no charge)",
+    "props": [],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "x": 160,
+    "y": 200,
+    "wires": [
+      [
+        "bulk-build-quote"
+      ]
+    ]
+  },
+  {
+    "id": "bulk-build-quote",
+    "type": "function",
+    "z": "zelnum-bulk-tab",
+    "name": "Build bulk quote request",
+    "func": "flow.set('zelnumBulkQuote',undefined);\n const apiKey=env.get('ZELNUM_API_KEY'), product=String(env.get('ZELNUM_BULK_PRODUCT')||'').trim();\n const series=String(env.get('ZELNUM_BULK_SERIES')||'phone').trim().toLowerCase();\n const identifiers=String(env.get('ZELNUM_IDENTIFIERS')||'').split(/[,\\r\\n]+/).map(s=>s.trim()).filter(Boolean);\n const catalog=flow.get('zelnumBulkCatalog');\n if(!apiKey||!product||!identifiers.length||!['phone','email'].includes(series)){node.error('Set API key, bulk product slug, phone/email series and your own list of identifiers. No sample list is submitted automatically.',msg);return null;}\n if(!catalog||Date.now()-catalog.fetchedAt>300000){node.error('Click Get products first to load current minimum batch sizes.',msg);return null;}\n const selected=catalog.products.find(p=>p.slug===product&&p.mode==='async'&&p.series===series);\n const minimum=selected&&Number(selected.min_phones);\n if(!selected||!Number.isInteger(minimum)||minimum<1){node.error('Select a current async product matching the series from Get products.',msg);return null;}\n if(identifiers.length<minimum){node.error(`Product ${product} requires at least ${minimum} rows; provided ${identifiers.length}. Do not pad with dummy or repeated data.`,msg);return null;}\n if(identifiers.length>10000){node.error('This array quote example supports at most 10,000 rows. Split larger lists or consult the file submission API.',msg);return null;}\n const body={product,phones:identifiers};\n if(series==='phone')body.country=String(env.get('ZELNUM_COUNTRY')||'US').trim().toUpperCase();\n msg.method='POST';msg.url='https://api.zelnum.com/api/v1/quotes/bulk';\n msg.headers={'X-API-Key':apiKey,'Content-Type':'application/json'};\n msg.payload=body;msg.zelnum={series,body:JSON.parse(JSON.stringify(body))};\n return msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 390,
+    "y": 200,
+    "wires": [
+      [
+        "bulk-http-quote"
+      ]
+    ]
+  },
+  {
+    "id": "bulk-http-quote",
+    "type": "http request",
+    "z": "zelnum-bulk-tab",
+    "name": "POST bulk quote",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 620,
+    "y": 200,
+    "wires": [
+      [
+        "bulk-save-quote"
+      ]
+    ]
+  },
+  {
+    "id": "bulk-save-quote",
+    "type": "function",
+    "z": "zelnum-bulk-tab",
+    "name": "Save quote for submit",
+    "func": "delete msg.headers;\nif (Number(msg.statusCode) < 200 || Number(msg.statusCode) >= 300 || !msg.payload || !msg.payload.quote || !msg.zelnum) {\n  flow.set('zelnumBulkQuote', undefined); node.error('Quote failed: ' + ((msg.payload && (msg.payload.message || msg.payload.code)) || msg.statusCode), msg); return null;\n}\nconst quote = msg.payload.quote;\nif (!quote.quote_token || !Number.isFinite(Number(quote.total)) || !Number.isFinite(Date.parse(quote.expires_at)) || Date.parse(quote.expires_at) <= Date.now()) {\n  flow.set('zelnumBulkQuote', undefined); node.error('Invalid or expired quote; request a new one.', msg); return null;\n}\nflow.set('zelnumBulkQuote', {quote, request: msg.zelnum});\nmsg.payload = {quote, count: msg.zelnum.body.phones.length, next: 'Review the price before clicking the separate BILLABLE inject. Keep the idempotency key for retries; use a new key for each new request.'};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 860,
+    "y": 200,
+    "wires": [
+      [
+        "bulk-debug-quote"
+      ]
+    ]
+  },
+  {
+    "id": "bulk-debug-quote",
+    "type": "debug",
+    "z": "zelnum-bulk-tab",
+    "name": "Bulk quote",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1080,
+    "y": 200,
+    "wires": []
+  },
+  {
+    "id": "bulk-inject-submit",
+    "type": "inject",
+    "z": "zelnum-bulk-tab",
+    "name": "3. Submit task (BILLABLE)",
+    "props": [],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "x": 170,
+    "y": 300,
+    "wires": [
+      [
+        "bulk-build-submit"
+      ]
+    ]
+  },
+  {
+    "id": "bulk-build-submit",
+    "type": "function",
+    "z": "zelnum-bulk-tab",
+    "name": "Build quoted bulk submit",
+    "func": "const saved = flow.get('zelnumBulkQuote');\nconst apiKey = env.get('ZELNUM_API_KEY');\nconst idempotencyKey = String(env.get('ZELNUM_IDEMPOTENCY_KEY') || '').trim();\nif (!apiKey || !idempotencyKey) { node.error('Set API key and a unique idempotency key for this logical request.', msg); return null; }\nif (!saved || !saved.request || !saved.quote || Date.parse(saved.quote.expires_at) <= Date.now()) { node.error('Get a fresh quote first; quotes expire.', msg); return null; }\nconst series = String(env.get('ZELNUM_BULK_SERIES') || 'phone').trim().toLowerCase();\nconst current = {product: String(env.get('ZELNUM_BULK_PRODUCT') || '').trim(), phones: String(env.get('ZELNUM_IDENTIFIERS') || '').split(/[,\\r\\n]+/).map(s => s.trim()).filter(Boolean)};\nif (series === 'phone') current.country = String(env.get('ZELNUM_COUNTRY') || 'US').trim().toUpperCase();\nif (series !== saved.request.series || JSON.stringify(current) !== JSON.stringify(saved.request.body)) { node.error('Inputs changed after quoting (including country). Get a new quote and review its price.', msg); return null; }\nif (saved.idempotencyKey && saved.idempotencyKey !== idempotencyKey) { node.error('This quote has already been executed. Keep its key for retries or get a new quote for a new request.', msg); return null; }\nsaved.idempotencyKey = idempotencyKey; flow.set('zelnumBulkQuote', saved);\nmsg.method = 'POST'; msg.url = 'https://api.zelnum.com/api/v1/detect';\nmsg.headers = {'X-API-Key': apiKey, 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey, 'X-ZelNum-Quote': saved.quote.quote_token, 'X-ZelNum-Quote-Amount': String(saved.quote.total)};\nmsg.payload = JSON.parse(JSON.stringify(saved.request.body));\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 420,
+    "y": 300,
+    "wires": [
+      [
+        "bulk-http-submit"
+      ]
+    ]
+  },
+  {
+    "id": "bulk-http-submit",
+    "type": "http request",
+    "z": "zelnum-bulk-tab",
+    "name": "POST bulk task",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 660,
+    "y": 300,
+    "wires": [
+      [
+        "bulk-save-task"
+      ]
+    ]
+  },
+  {
+    "id": "bulk-save-task",
+    "type": "function",
+    "z": "zelnum-bulk-tab",
+    "name": "Save task ID",
+    "func": "delete msg.headers;\nif (Number(msg.statusCode)!==202 || !msg.payload || !msg.payload.task_id) {node.error('Submission failed: ' + ((msg.payload && (msg.payload.message || msg.payload.code)) || msg.statusCode),msg);return null;}\nflow.set('zelnumBulkTaskId',msg.payload.task_id);\nflow.set('zelnumBulkStatus',undefined);\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 870,
+    "y": 300,
+    "wires": [
+      [
+        "bulk-debug-submit"
+      ]
+    ]
+  },
+  {
+    "id": "bulk-debug-submit",
+    "type": "debug",
+    "z": "zelnum-bulk-tab",
+    "name": "Submitted bulk task",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1090,
+    "y": 300,
+    "wires": []
+  },
+  {
+    "id": "bulk-inject-status",
+    "type": "inject",
+    "z": "zelnum-bulk-tab",
+    "name": "4. Get task status",
+    "props": [],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "x": 150,
+    "y": 380,
+    "wires": [
+      [
+        "bulk-build-status"
+      ]
+    ]
+  },
+  {
+    "id": "bulk-build-status",
+    "type": "function",
+    "z": "zelnum-bulk-tab",
+    "name": "Build status request",
+    "func": "const apiKey=env.get('ZELNUM_API_KEY');\nconst taskId=env.get('ZELNUM_TASK_ID') || flow.get('zelnumBulkTaskId');\nif(!apiKey || !taskId){node.error('Set API key and submit a task, or set ZELNUM_TASK_ID to resume an existing task.',msg);return null;}\nmsg.method='GET';msg.url='https://api.zelnum.com/api/v1/tasks/'+encodeURIComponent(taskId);msg.headers={'X-API-Key':apiKey};msg.payload=undefined;return msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 380,
+    "y": 380,
+    "wires": [
+      [
+        "bulk-http-status"
+      ]
+    ]
+  },
+  {
+    "id": "bulk-http-status",
+    "type": "http request",
+    "z": "zelnum-bulk-tab",
+    "name": "GET task status",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 620,
+    "y": 380,
+    "wires": [
+      [
+        "bulk-check-status"
+      ]
+    ]
+  },
+  {
+    "id": "bulk-debug-status",
+    "type": "debug",
+    "z": "zelnum-bulk-tab",
+    "name": "Bulk task status",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1110,
+    "y": 380,
+    "wires": []
+  },
+  {
+    "id": "bulk-catch",
+    "type": "catch",
+    "z": "zelnum-bulk-tab",
+    "name": "Catch Zelnum errors",
+    "scope": null,
+    "uncaught": false,
+    "x": 160,
+    "y": 620,
+    "wires": [
+      [
+        "bulk-format-error"
+      ]
+    ]
+  },
+  {
+    "id": "bulk-format-error",
+    "type": "function",
+    "z": "zelnum-bulk-tab",
+    "name": "Format error",
+    "func": "msg.payload = { error: (msg.error && msg.error.message) || 'Node-RED request failed', statusCode: msg.statusCode || null, docs: 'https://docs.zelnum.com/errors/' };\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 380,
+    "y": 620,
+    "wires": [
+      [
+        "bulk-debug-error"
+      ]
+    ]
+  },
+  {
+    "id": "bulk-debug-error",
+    "type": "debug",
+    "z": "zelnum-bulk-tab",
+    "name": "Zelnum error",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 620,
+    "y": 620,
+    "wires": []
+  },
+  {
+    "id": "bulk-inject-products",
+    "type": "inject",
+    "z": "zelnum-bulk-tab",
+    "name": "1. Get products / minimum rows",
+    "props": [],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "x": 170,
+    "y": 120,
+    "wires": [
+      [
+        "bulk-build-products"
+      ]
+    ]
+  },
+  {
+    "id": "bulk-build-products",
+    "type": "function",
+    "z": "zelnum-bulk-tab",
+    "name": "Build public product request",
+    "func": "flow.set('zelnumBulkCatalog', undefined);\nmsg.method='GET';msg.url='https://api.zelnum.com/api/v1/products';msg.headers={};msg.payload=undefined;return msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 440,
+    "y": 120,
+    "wires": [
+      [
+        "bulk-http-products"
+      ]
+    ]
+  },
+  {
+    "id": "bulk-http-products",
+    "type": "http request",
+    "z": "zelnum-bulk-tab",
+    "name": "GET products",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 670,
+    "y": 120,
+    "wires": [
+      [
+        "bulk-save-products"
+      ]
+    ]
+  },
+  {
+    "id": "bulk-save-products",
+    "type": "function",
+    "z": "zelnum-bulk-tab",
+    "name": "Save current batch requirements",
+    "func": "if(Number(msg.statusCode)!==200 || !msg.payload || !Array.isArray(msg.payload.data)){node.error('Cannot load current products.',msg);return null;}\nflow.set('zelnumBulkCatalog',{products:msg.payload.data,fetchedAt:Date.now()});\nmsg.payload=msg.payload.data.filter(p=>p.mode==='async').map(p=>({slug:p.slug,series:p.series,min_phones:p.min_phones}));\ndelete msg.headers;return msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 910,
+    "y": 120,
+    "wires": [
+      [
+        "bulk-debug-products"
+      ]
+    ]
+  },
+  {
+    "id": "bulk-debug-products",
+    "type": "debug",
+    "z": "zelnum-bulk-tab",
+    "name": "Product minimums",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1150,
+    "y": 120,
+    "wires": []
+  },
+  {
+    "id": "bulk-check-status",
+    "type": "function",
+    "z": "zelnum-bulk-tab",
+    "name": "Check status / expired results",
+    "func": "delete msg.headers;\nif(Number(msg.statusCode)!==200 || !msg.payload || !msg.payload.task_id){node.error('Status request failed.',msg);return null;}\nflow.set('zelnumBulkStatus',msg.payload);\nif(msg.payload.status==='completed' && !msg.payload.result_available){\n msg.payload={...msg.payload,notice:'Task completed, but its result is unavailable or expired. It is not still processing.'};\n} else if(msg.payload.status==='failed'){msg.payload={...msg.payload,notice:msg.payload.failure_message || 'Task failed.'};}\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 840,
+    "y": 380,
+    "wires": [
+      [
+        "bulk-debug-status"
+      ]
+    ]
+  },
+  {
+    "id": "bulk-inject-result",
+    "type": "inject",
+    "z": "zelnum-bulk-tab",
+    "name": "5. Get result and download",
+    "props": [],
+    "repeat": "",
+    "crontab": "",
+    "once": false,
+    "onceDelay": 0.1,
+    "topic": "",
+    "x": 170,
+    "y": 460,
+    "wires": [
+      [
+        "bulk-build-result"
+      ]
+    ]
+  },
+  {
+    "id": "bulk-build-result",
+    "type": "function",
+    "z": "zelnum-bulk-tab",
+    "name": "Build result metadata request",
+    "func": "const apiKey=env.get('ZELNUM_API_KEY');\nconst taskId=env.get('ZELNUM_TASK_ID') || flow.get('zelnumBulkTaskId');\nif(!apiKey || !taskId){node.error('Set API key and a task ID.',msg);return null;}\nmsg.zelnumTaskId=String(taskId);msg.method='GET';msg.url='https://api.zelnum.com/api/v1/tasks/'+encodeURIComponent(taskId)+'/result';\nmsg.headers={'X-API-Key':apiKey};msg.payload=undefined;return msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 440,
+    "y": 460,
+    "wires": [
+      [
+        "bulk-http-result"
+      ]
+    ]
+  },
+  {
+    "id": "bulk-http-result",
+    "type": "http request",
+    "z": "zelnum-bulk-tab",
+    "name": "GET result metadata",
+    "method": "use",
+    "ret": "obj",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 690,
+    "y": 460,
+    "wires": [
+      [
+        "bulk-build-download"
+      ]
+    ]
+  },
+  {
+    "id": "bulk-build-download",
+    "type": "function",
+    "z": "zelnum-bulk-tab",
+    "name": "Validate result / build download",
+    "func": "delete msg.headers;\nif(Number(msg.statusCode)!==200 || !msg.payload || !msg.payload.download_url){\n const body=msg.payload || {};\n const explanation=Number(msg.statusCode)===404?'Result expired, unavailable or not found; do not treat it as still processing.':Number(msg.statusCode)===422?'Result is not ready. Check task status.':(body.message || body.code || 'Result request failed.');\n node.error(explanation,msg);return null;\n}\nif(msg.payload.expires_at && Date.parse(msg.payload.expires_at)<=Date.now()){node.error('Result expired. It is no longer downloadable.',msg);return null;}\nconst expected='https://api.zelnum.com/api/v1/tasks/'+encodeURIComponent(msg.zelnumTaskId)+'/download';\nif(msg.payload.download_url!==expected){node.error('Unexpected download URL; API key was not forwarded.',msg);return null;}\nmsg.zelnumResult=msg.payload;\nmsg.method='GET';msg.url=expected;msg.headers={'X-API-Key':env.get('ZELNUM_API_KEY')};msg.payload=undefined;return msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 960,
+    "y": 460,
+    "wires": [
+      [
+        "bulk-http-download"
+      ]
+    ]
+  },
+  {
+    "id": "bulk-http-download",
+    "type": "http request",
+    "z": "zelnum-bulk-tab",
+    "name": "Download ZIP / CSV as Buffer",
+    "method": "use",
+    "ret": "bin",
+    "paytoqs": "ignore",
+    "url": "",
+    "tls": "",
+    "persist": false,
+    "proxy": "",
+    "insecureHTTPParser": false,
+    "authType": "",
+    "senderr": false,
+    "headers": [],
+    "x": 440,
+    "y": 540,
+    "wires": [
+      [
+        "bulk-validate-download"
+      ]
+    ]
+  },
+  {
+    "id": "bulk-validate-download",
+    "type": "function",
+    "z": "zelnum-bulk-tab",
+    "name": "Reject failed / empty download",
+    "func": "delete msg.headers;\nif(Number(msg.statusCode)!==200 || !Buffer.isBuffer(msg.payload) || msg.payload.length===0){node.error('Download failed or was empty; no result file was written.',msg);return null;}\nmsg.filename=String(msg.zelnumTaskId)+(msg.payload[0]===0x50&&msg.payload[1]===0x4b?'.zip':'.csv');\nmsg.zelnumDownload={task_id:msg.zelnumTaskId,filename:msg.filename,bytes:msg.payload.length,expires_at:msg.zelnumResult.expires_at};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 750,
+    "y": 540,
+    "wires": [
+      [
+        "bulk-debug-download"
+      ]
+    ]
+  },
+  {
+    "id": "bulk-debug-download",
+    "type": "debug",
+    "z": "zelnum-bulk-tab",
+    "name": "Downloaded result Buffer",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 1040,
+    "y": 540,
+    "wires": []
+  }
+]
