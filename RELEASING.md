@@ -3,7 +3,7 @@
 This folder has not been published by this repair. A local build or passing
 tests do not confirm PyPI publication or live paid API compatibility.
 
-1. The public repository is `https://github.com/zelnum/zelnum-python`
+1. The public repository is `https://github.com/Zelnum/zelnum-python`
    (organization `zelnum`). Confirm the URLs in `pyproject.toml` and README still
    point there — PyPI metadata cannot be edited after a file is uploaded, so a
    wrong owner or repository name would only be fixable with a new version.

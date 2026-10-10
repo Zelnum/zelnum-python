@@ -87,7 +87,7 @@ For email, use an email realtime product and email identifier, pass
 Quote responses have an outer `{"quote": {...}}` object. Quotes expire;
 the quote and execution must use matching input. Pass both quote fields together.
 
-In a repository checkout, the [quickstart example](https://github.com/zelnum/zelnum-python/blob/main/examples/quickstart.py)
+In a repository checkout, the [quickstart example](https://github.com/Zelnum/zelnum-python/blob/main/examples/quickstart.py)
 validates the chosen products and only quotes unless `--execute` is supplied:
 
 ```bash
@@ -100,7 +100,7 @@ python examples/quickstart.py "$ZELNUM_IDENTIFIER" --products "$ZELNUM_PRODUCT_I
 
 Prepare a UTF-8 text file with one real identifier per line (no header), meeting
 the selected product's minimum. Set `ZELNUM_BULK_PRODUCT` to its async slug.
-The [bulk example](https://github.com/zelnum/zelnum-python/blob/main/examples/bulk.py)
+The [bulk example](https://github.com/Zelnum/zelnum-python/blob/main/examples/bulk.py)
 supports phone and email lists, validates the product, and quotes first:
 
 ```bash
@@ -192,8 +192,8 @@ For realtime retries, use `zelnum check ... --idempotency-key YOUR_SAVED_KEY`.
 - [Create an account](https://zelnum.com)
 - [API documentation](https://docs.zelnum.com)
 - [Pricing](https://zelnum.com/pricing/)
-- [Report an SDK issue](https://github.com/zelnum/zelnum-python/issues)
+- [Report an SDK issue](https://github.com/Zelnum/zelnum-python/issues)
 
 ## License
 
-MIT — see [LICENSE](https://github.com/zelnum/zelnum-python/blob/main/LICENSE).
+MIT — see [LICENSE](https://github.com/Zelnum/zelnum-python/blob/main/LICENSE).

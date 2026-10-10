@@ -40,9 +40,9 @@ dependencies = ["httpx>=0.24.0"]
 Homepage = "https://zelnum.com"
 Pricing = "https://zelnum.com/pricing/"
 Documentation = "https://docs.zelnum.com"
-Repository = "https://github.com/zelnum/zelnum-python"
-Changelog = "https://github.com/zelnum/zelnum-python/blob/main/CHANGELOG.md"
-"Issue Tracker" = "https://github.com/zelnum/zelnum-python/issues"
+Repository = "https://github.com/Zelnum/zelnum-python"
+Changelog = "https://github.com/Zelnum/zelnum-python/blob/main/CHANGELOG.md"
+"Issue Tracker" = "https://github.com/Zelnum/zelnum-python/issues"
 
 [project.scripts]
 zelnum = "zelnum.cli:main"
